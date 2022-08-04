@@ -7,25 +7,27 @@ import ReactFlow, {
   Background,
   useNodesState,
   useEdgesState,
+  useReactFlow,
+  applyNodeChanges,
+  applyEdgeChanges,
 } from 'react-flow-renderer';
+import { ReactFlowProvider } from 'react-flow-renderer';
 import dagre from 'dagre';
 
 import { initialNodes, initialEdges } from './nodes-edges.js';
-
 import './index.css';
 
-const nodeWidth = 172;
-const nodeHeight = 36;
-const connectionLine = ConnectionLineType.SimpleBezier;
+const NODE_WIDTH = 172;
+const NODE_HEIGHT = 36;
+const CONNECTION_LINE = ConnectionLineType.SimpleBezier;
 
 const getLayoutedElements = (nodes, edges) => {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
-
   dagreGraph.setGraph({ rankdir: 'TB' });
 
   nodes.forEach((node) => {
-    dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+    dagreGraph.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
   });
 
   edges.forEach((edge) => {
@@ -34,7 +36,7 @@ const getLayoutedElements = (nodes, edges) => {
 
   dagre.layout(dagreGraph);
 
-  nodes.forEach((node) => {
+  const newNodes = nodes.map((node) => {
     const nodeWithPosition = dagreGraph.node(node.id);
     node.targetPosition = 'top';
     node.sourcePosition = 'bottom';
@@ -42,38 +44,44 @@ const getLayoutedElements = (nodes, edges) => {
     // We are shifting the dagre node position (anchor=center center) to the top left
     // so it matches the React Flow node anchor point (top left).
     node.position = {
-      x: nodeWithPosition.x - nodeWidth / 2,
-      y: nodeWithPosition.y - nodeHeight / 2,
+      x: nodeWithPosition.x - NODE_WIDTH / 2,
+      y: nodeWithPosition.y - NODE_HEIGHT / 2,
     };
 
     return node;
   });
 
-  return { nodes, edges };
+  return newNodes;
 };
 
-const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
+const layoutedNodes = getLayoutedElements(
   initialNodes,
   initialEdges
 );
 
-const LayoutFlow = () => {
-  const [nodes, setNodes, onNodesChange] = useNodesState(layoutedNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(layoutedEdges);
+const Taskmaster = () => {
+  const reactFlow = useReactFlow();
+  const [nodes, setNodes] = useNodesState(layoutedNodes);
+  const [edges, setEdges] = useEdgesState(initialEdges);
 
-  const onConnect = useCallback((params) => {
-    setEdges((eds) => addEdge(params, eds));
+  const onNodesChange = (changes) => setNodes((nds) => {
+    const newNodes = applyNodeChanges(changes, nds);
+    return getLayoutedElements(newNodes, edges);
+  });
+
+  const onEdgesChange = (changes) => {
+    const newEdges = applyEdgeChanges(changes, edges);
+    const newNodes = getLayoutedElements(nodes, newEdges);
+    
+    setNodes(newNodes);
+    setEdges(newEdges);
   }
-  );
 
-  const updateNodes = () => {
-    setNodes((nds) => {
-      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nds, edges);
-      return [...layoutedNodes];
-    })
-  }
+  const onConnect = (params) => {
+    reactFlow.addEdges(addEdge(params, edges));
+  };
 
-  useEffect(updateNodes, [nodes, edges]);
+  // useEffect(TBDANIMATIONS, [nodes, edges]);
 
   const addNodeButton = useCallback((params) => {
     setNodes((nds) => [...nds, {
@@ -83,7 +91,8 @@ const LayoutFlow = () => {
       targetPosition: 'top',
       sourcePosition: 'bottom'
     }]);
-  }, []);
+  }, [setNodes]);
+  
 
   return (
     <div className="layoutflow">
@@ -94,7 +103,7 @@ const LayoutFlow = () => {
         onEdgesChange={onEdgesChange}
         onConnect={onConnect}
         attributionPosition="top-right"
-        connectionLineType={connectionLine}
+        connectionLineType={CONNECTION_LINE}
         nodesDraggable={false}
         fitView
       >
@@ -121,4 +130,10 @@ const LayoutFlow = () => {
   );
 };
 
-export default LayoutFlow;
+const TaskmasterWithProvider = () => {
+  return <ReactFlowProvider>
+    <Taskmaster />
+  </ReactFlowProvider>
+}
+
+export default TaskmasterWithProvider;
