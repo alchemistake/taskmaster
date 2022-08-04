@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import ReactFlow, {
   addEdge,
   ConnectionLineType,
@@ -14,14 +14,14 @@ import { initialNodes, initialEdges } from './nodes-edges.js';
 
 import './index.css';
 
-const dagreGraph = new dagre.graphlib.Graph();
-dagreGraph.setDefaultEdgeLabel(() => ({}));
-
 const nodeWidth = 172;
 const nodeHeight = 36;
 const connectionLine = ConnectionLineType.SimpleBezier;
 
 const getLayoutedElements = (nodes, edges) => {
+  const dagreGraph = new dagre.graphlib.Graph();
+  dagreGraph.setDefaultEdgeLabel(() => ({}));
+
   dagreGraph.setGraph({ rankdir: 'TB' });
 
   nodes.forEach((node) => {
@@ -58,9 +58,32 @@ const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
 );
 
 const LayoutFlow = () => {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
+  const [nodes, setNodes, onNodesChange] = useNodesState(layoutedNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(layoutedEdges);
+
+  const onConnect = useCallback((params) => {
+    setEdges((eds) => addEdge(params, eds));
+  }
+  );
+
+  const updateNodes = () => {
+    setNodes((nds) => {
+      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nds, edges);
+      return [...layoutedNodes];
+    })
+  }
+
+  useEffect(updateNodes, [nodes, edges]);
+
+  const addNodeButton = useCallback((params) => {
+    setNodes((nds) => [...nds, {
+      id: '12',
+      data: { label: "selam caner" },
+      position: { x: 500, y: 86 },
+      targetPosition: 'top',
+      sourcePosition: 'bottom'
+    }]);
+  }, []);
 
   return (
     <div className="layoutflow">
@@ -90,9 +113,10 @@ const LayoutFlow = () => {
           }}
           nodeBorderRadius={2}
         />
-        <Controls />
+        <Controls showInteractive={false} />
         <Background variant="lines" color="#f0f" gap={16} />
       </ReactFlow>
+      <button onClick={addNodeButton}>Add</button>
     </div>
   );
 };
