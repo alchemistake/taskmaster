@@ -24,7 +24,7 @@ const CONNECTION_LINE = ConnectionLineType.SimpleBezier;
 const getLayoutedElements = (nodes, edges) => {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
-  dagreGraph.setGraph({ rankdir: 'TB' });
+  dagreGraph.setGraph({ rankdir: 'TB', ranker: "hierarchy" });
 
   nodes.forEach((node) => {
     dagreGraph.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
@@ -72,7 +72,7 @@ const Taskmaster = () => {
   const onEdgesChange = (changes) => {
     const newEdges = applyEdgeChanges(changes, edges);
     const newNodes = getLayoutedElements(nodes, newEdges);
-    
+
     setNodes(newNodes);
     setEdges(newEdges);
   }
@@ -92,7 +92,6 @@ const Taskmaster = () => {
       sourcePosition: 'bottom'
     }]);
   }, [setNodes]);
-  
 
   return (
     <div className="layoutflow">

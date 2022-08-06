@@ -66,4 +66,5 @@ export const initialEdges = [
   { id: 'e45', source: '4', target: '5'},
   { id: 'e56', source: '5', target: '6'},
   { id: 'e57', source: '5', target: '7'},
+  { id: 'e42d', source: '4', target: '2d'},
 ];
