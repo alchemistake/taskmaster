@@ -12,47 +12,12 @@ import ReactFlow, {
   applyEdgeChanges,
 } from 'react-flow-renderer';
 import { ReactFlowProvider } from 'react-flow-renderer';
-import dagre from 'dagre';
+import { getLayoutedElements, interpolate } from './layoutHelpers.js';
 
 import { initialNodes, initialEdges } from './nodes-edges.js';
 import './index.css';
 
-const NODE_WIDTH = 172;
-const NODE_HEIGHT = 36;
 const CONNECTION_LINE = ConnectionLineType.SimpleBezier;
-
-const getLayoutedElements = (nodes, edges) => {
-  const dagreGraph = new dagre.graphlib.Graph();
-  dagreGraph.setDefaultEdgeLabel(() => ({}));
-  dagreGraph.setGraph({ rankdir: 'TB', ranker: "hierarchy" });
-
-  nodes.forEach((node) => {
-    dagreGraph.setNode(node.id, { width: NODE_WIDTH, height: NODE_HEIGHT });
-  });
-
-  edges.forEach((edge) => {
-    dagreGraph.setEdge(edge.source, edge.target);
-  });
-
-  dagre.layout(dagreGraph);
-
-  const newNodes = nodes.map((node) => {
-    const nodeWithPosition = dagreGraph.node(node.id);
-    node.targetPosition = 'top';
-    node.sourcePosition = 'bottom';
-
-    // We are shifting the dagre node position (anchor=center center) to the top left
-    // so it matches the React Flow node anchor point (top left).
-    node.position = {
-      x: nodeWithPosition.x - NODE_WIDTH / 2,
-      y: nodeWithPosition.y - NODE_HEIGHT / 2,
-    };
-
-    return node;
-  });
-
-  return newNodes;
-};
 
 const layoutedNodes = getLayoutedElements(
   initialNodes,
@@ -81,13 +46,19 @@ const Taskmaster = () => {
     reactFlow.addEdges(addEdge(params, edges));
   };
 
-  // useEffect(TBDANIMATIONS, [nodes, edges]);
+  useEffect(() => {
+    if(!nodes.saddled){
+      setTimeout(() => {
+        setNodes(interpolate(nodes, 0.1));
+      }, 20)
+    }
+  });
 
   const addNodeButton = useCallback((params) => {
     setNodes((nds) => [...nds, {
       id: '12',
       data: { label: "selam caner" },
-      position: { x: 500, y: 86 },
+      position: { x: 1, y: 1 },
       targetPosition: 'top',
       sourcePosition: 'bottom'
     }]);
