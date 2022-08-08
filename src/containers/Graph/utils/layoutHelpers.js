@@ -3,7 +3,7 @@ import dagre from 'dagre';
 const NODE_WIDTH = 172;
 const NODE_HEIGHT = 36;
 
-const getLayoutedElements = (nodes, edges) => {
+const calculateNodeLocations = (nodes, edges) => {
     const dagreGraph = new dagre.graphlib.Graph();
     dagreGraph.setDefaultEdgeLabel(() => ({}));
     dagreGraph.setGraph({ rankdir: 'TB', ranker: "hierarchy" });
@@ -23,11 +23,9 @@ const getLayoutedElements = (nodes, edges) => {
         node.targetPosition = 'top';
         node.sourcePosition = 'bottom';
 
-        // We are shifting the dagre node position (anchor=center center) to the top left
-        // so it matches the React Flow node anchor point (top left).
         node.desiredPosition = {
-            x: nodeWithPosition.x - NODE_WIDTH / 2,
-            y: nodeWithPosition.y - NODE_HEIGHT / 2,
+            x: nodeWithPosition.x,
+            y: nodeWithPosition.y,
         };
 
         node.position = {
@@ -47,7 +45,7 @@ const getLayoutedElements = (nodes, edges) => {
     return newNodes;
 };
 
-const interpolate = (nodes, ratio) => {
+const interpolateNodeLocations = (nodes, ratio) => {
     const newNodes = nodes.map((node) => {
         node.position = {
             x: node.position.x * ( 1 - ratio) + node.desiredPosition.x * (ratio),
@@ -67,4 +65,4 @@ const interpolate = (nodes, ratio) => {
     return newNodes
 }
 
-export { getLayoutedElements, interpolate}
+export { calculateNodeLocations, interpolateNodeLocations}
